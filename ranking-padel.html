@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ranking — Club de Pádel</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --surface2: #1e1e1e;
+    --border: rgba(255,255,255,0.07);
+    --accent: #c8f135;
+    --accent-dim: rgba(200,241,53,0.12);
+    --text: #f0f0ee;
+    --muted: #6b6b68;
+    --gold: #f5c842;
+    --silver: #b0b8c1;
+    --bronze: #c97b3a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    font-size: 15px;
+  }
+
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 40px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    cursor: pointer;
+  }
+
+  .nav-cats { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .nav-cat-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 6px 16px;
+    border-radius: 100px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+  .nav-cat-btn:hover, .nav-cat-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* HOME */
+  .home-hero {
+    padding: 80px 40px 40px;
+    text-align: center;
+  }
+  .home-hero h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(60px, 10vw, 120px);
+    letter-spacing: 4px;
+    line-height: 0.9;
+  }
+  .home-hero h1 span { color: var(--accent); }
+  .home-hero p { color: var(--muted); margin-top: 16px; font-size: 15px; }
+
+  .home-categories {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    padding: 40px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .cat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 24px;
+    cursor: pointer;
+    transition: all 0.25s;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .cat-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent-dim);
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .cat-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+  .cat-card:hover::before { opacity: 1; }
+  .cat-card-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 64px;
+    color: var(--accent);
+    line-height: 1;
+    opacity: 0.2;
+    position: absolute;
+    top: 12px;
+    right: 16px;
+  }
+  .cat-card-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 2px;
+    position: relative;
+  }
+  .cat-card-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+    position: relative;
+  }
+
+  /* CATEGORY PAGE */
+  .cat-page-header {
+    padding: 48px 40px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .cat-page-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 8vw, 80px);
+    letter-spacing: 3px;
+    line-height: 1;
+  }
+  .cat-page-title span { color: var(--accent); }
+  .cat-page-meta { font-size: 13px; color: var(--muted); margin-top: 6px; }
+
+  /* LOADING / ERROR */
+  .state-msg { text-align: center; padding: 80px 40px; color: var(--muted); }
+  .state-msg h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 1px;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* RANKING */
+  .ranking-container { padding: 32px 40px; max-width: 860px; }
+
+  .ranking-row {
+    display: grid;
+    grid-template-columns: 48px 72px 1fr auto;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 18px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    transition: all 0.2s;
+  }
+  .ranking-row:hover { border-color: rgba(200,241,53,0.2); background: var(--surface2); }
+  .ranking-row.top1 { border-color: rgba(245,200,66,0.35); background: rgba(245,200,66,0.04); }
+  .ranking-row.top2 { border-color: rgba(176,184,193,0.3); background: rgba(176,184,193,0.03); }
+  .ranking-row.top3 { border-color: rgba(201,123,58,0.3); background: rgba(201,123,58,0.03); }
+
+  .rank-pos {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    text-align: center;
+    line-height: 1;
+  }
+  .rank-pos.p1 { color: var(--gold); }
+  .rank-pos.p2 { color: var(--silver); }
+  .rank-pos.p3 { color: var(--bronze); }
+  .rank-pos.other { color: var(--muted); }
+
+  .rank-photo {
+    width: 60px; height: 60px;
+    border-radius: 10px;
+    object-fit: cover;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    display: block;
+  }
+  .rank-photo-placeholder {
+    width: 60px; height: 60px;
+    border-radius: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+
+  .rank-info { min-width: 0; }
+  .rank-names {
+    font-size: 15px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .rank-names-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .rank-points { text-align: right; }
+  .rank-points-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    line-height: 1;
+    color: var(--accent);
+  }
+  .rank-points-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 600px) {
+    nav { padding: 16px 20px; }
+    .home-hero { padding: 48px 20px 24px; }
+    .home-categories { padding: 20px; gap: 12px; }
+    .ranking-container { padding: 16px 16px; }
+    .cat-page-header { padding: 28px 20px 16px; }
+    .ranking-row { grid-template-columns: 36px 52px 1fr auto; gap: 10px; padding: 10px 12px; }
+    .rank-photo, .rank-photo-placeholder { width: 48px; height: 48px; }
+    .rank-points-num { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo" onclick="goHome()">PÁDEL</div>
+  <div class="nav-cats" id="navCats"></div>
+</nav>
+
+<div class="page active" id="pageHome">
+  <div class="home-hero">
+    <h1>RANKING<br><span>PÁDEL</span></h1>
+    <p>Seleccioná una categoría para ver el ranking</p>
+  </div>
+  <div class="home-categories" id="homeCategories"></div>
+</div>
+
+<div id="catPages"></div>
+
+<script>
+// ── CONFIGURACIÓN ──────────────────────────────────────────
+const SHEET_ID = '1ICw2GMuEczY6844kb_CN6Vt-Xe-o9fIq';
+const CLUB_NAME = 'Club de Pádel';
+
+// Nombre de la categoría → nombre exacto de la hoja en Google Sheets
+const CATEGORIES = [
+  { label: 'Damas',  sheet: '🏅 Damas' },
+  { label: '2da',    sheet: '🏅 2da'   },
+  { label: '4ta',    sheet: '🏅 4ta'   },
+  { label: '6ta',    sheet: '🏅 6ta'   },
+  { label: '8va',    sheet: '🏅 8va'   },
+];
+
+// Columnas del ranking (fila 5 = headers, datos desde fila 7)
+// B=pos(formula) C=Apellido D=Nombre E=Puntos F=Torneos G=Mejor H=FotoURL
+const COL = { apellido: 2, nombre: 3, puntos: 4, torneos: 5, mejor: 6, foto: 7 }; // 0-indexed
+
+const BASE = 'https://docs.google.com/spreadsheets/d/';
+
+// ── INIT ───────────────────────────────────────────────────
+function slug(str) { return str.toLowerCase().replace(/[^a-z0-9]/g, '_'); }
+
+function buildNav() {
+  const nav = document.getElementById('navCats');
+  nav.innerHTML = '';
+  CATEGORIES.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'nav-cat-btn';
+    btn.textContent = cat.label;
+    btn.onclick = () => goCategory(cat);
+    nav.appendChild(btn);
+  });
+}
+
+function buildHome() {
+  const cont = document.getElementById('homeCategories');
+  cont.innerHTML = '';
+  CATEGORIES.forEach((cat, i) => {
+    const card = document.createElement('div');
+    card.className = 'cat-card';
+    card.innerHTML = `
+      <div class="cat-card-number">${String(i+1).padStart(2,'0')}</div>
+      <div class="cat-card-name">${cat.label}</div>
+      <div class="cat-card-sub">Ver ranking →</div>
+    `;
+    card.onclick = () => goCategory(cat);
+    cont.appendChild(card);
+  });
+}
+
+function buildCatPages() {
+  const cont = document.getElementById('catPages');
+  cont.innerHTML = '';
+  CATEGORIES.forEach(cat => {
+    const div = document.createElement('div');
+    div.className = 'page';
+    div.id = `page-${slug(cat.label)}`;
+    div.innerHTML = `
+      <div class="cat-page-header">
+        <div class="cat-page-title">Categoría <span>${cat.label}</span></div>
+        <div class="cat-page-meta" id="meta-${slug(cat.label)}">Cargando...</div>
+      </div>
+      <div class="ranking-container" id="ranking-${slug(cat.label)}">
+        <div class="state-msg"><div class="spinner"></div><p>Cargando ranking...</p></div>
+      </div>
+    `;
+    cont.appendChild(div);
+  });
+}
+
+function goHome() {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('pageHome').classList.add('active');
+  document.querySelectorAll('.nav-cat-btn').forEach(b => b.classList.remove('active'));
+}
+
+function goCategory(cat) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(`page-${slug(cat.label)}`).classList.add('active');
+  document.querySelectorAll('.nav-cat-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent === cat.label);
+  });
+  window.scrollTo(0, 0);
+  loadCategoryData(cat);
+}
+
+// ── DATA LOADING ───────────────────────────────────────────
+async function loadCategoryData(cat) {
+  const container = document.getElementById(`ranking-${slug(cat.label)}`);
+  const meta      = document.getElementById(`meta-${slug(cat.label)}`);
+  container.innerHTML = '<div class="state-msg"><div class="spinner"></div><p>Cargando datos...</p></div>';
+
+  try {
+    // Fetch CSV from published sheet by sheet name
+    const url = `${BASE}${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(cat.sheet)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('fetch failed');
+    const csv = await res.text();
+    const rows = parseCSV(csv);
+
+    // Sheet has 6 header/info rows, data starts at row 7 (index 6)
+    // Row 5 (index 4) has column headers
+    // Skip rows until we find the header row, then read data
+    // Strategy: look for row containing "Apellido" to find header, then read from there+1
+    let dataStart = -1;
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i].some(c => c.trim().toLowerCase() === 'apellido')) {
+        dataStart = i + 1;
+        break;
+      }
+    }
+    if (dataStart < 0) dataStart = 6; // fallback: skip 6 rows
+
+    const data = rows.slice(dataStart).filter(r =>
+      r[COL.apellido] && r[COL.apellido].trim() &&
+      r[COL.puntos] && r[COL.puntos].trim()
+    );
+
+    if (!data.length) {
+      showError(cat.label, 'No hay datos en esta categoría todavía.');
+      return;
+    }
+
+    // Parse players
+    const players = data.map(row => ({
+      apellido: (row[COL.apellido] || '').trim(),
+      nombre:   (row[COL.nombre]   || '').trim(),
+      puntos:   parseFloat((row[COL.puntos] || '0').replace(',', '.')) || 0,
+      torneos:  parseInt(row[COL.torneos] || '0') || 0,
+      mejor:    (row[COL.mejor]    || '').trim(),
+      foto:     (row[COL.foto]     || '').trim(),
+    })).filter(p => p.puntos > 0 || p.apellido);
+
+    // Sort by points desc
+    players.sort((a, b) => b.puntos - a.puntos);
+
+    // Assign positions (tied players get same rank)
+    let pos = 1;
+    players.forEach((p, i) => {
+      if (i > 0 && p.puntos < players[i-1].puntos) pos = i + 1;
+      p.pos = pos;
+    });
+
+    meta.textContent = `${players.length} jugadores · Actualizado ahora`;
+    renderRanking(cat.label, players);
+
+  } catch (e) {
+    showError(cat.label,
+      'No se pudo cargar el ranking. Verificá que el Sheet esté publicado como CSV.');
+  }
+}
+
+function renderRanking(catLabel, players) {
+  const container = document.getElementById(`ranking-${slug(catLabel)}`);
+  container.innerHTML = '';
+
+  players.forEach(p => {
+    const row = document.createElement('div');
+    const cls = p.pos === 1 ? 'top1' : p.pos === 2 ? 'top2' : p.pos === 3 ? 'top3' : '';
+    row.className = `ranking-row ${cls}`;
+
+    const posCls = p.pos === 1 ? 'p1' : p.pos === 2 ? 'p2' : p.pos === 3 ? 'p3' : 'other';
+
+    const fotoHTML = p.foto
+      ? `<img class="rank-photo" src="${p.foto}" alt="${p.apellido}"
+           onerror="this.outerHTML='<div class=\\'rank-photo-placeholder\\'>🎾</div>'">`
+      : `<div class="rank-photo-placeholder">🎾</div>`;
+
+    const fullName = p.nombre ? `${p.apellido} ${p.nombre}` : p.apellido;
+    const subInfo  = p.mejor && p.mejor !== '—'
+      ? `${p.torneos} torneo${p.torneos !== 1 ? 's' : ''} · Mejor: ${p.mejor}`
+      : `${p.torneos} torneo${p.torneos !== 1 ? 's' : ''}`;
+
+    row.innerHTML = `
+      <div class="rank-pos ${posCls}">${p.pos}</div>
+      ${fotoHTML}
+      <div class="rank-info">
+        <div class="rank-names">${fullName}</div>
+        <div class="rank-names-sub">${subInfo}</div>
+      </div>
+      <div class="rank-points">
+        <div class="rank-points-num">${p.puntos}</div>
+        <div class="rank-points-label">pts</div>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function showError(catLabel, msg) {
+  const container = document.getElementById(`ranking-${slug(catLabel)}`);
+  const meta = document.getElementById(`meta-${slug(catLabel)}`);
+  if (meta) meta.textContent = 'Error al cargar';
+  container.innerHTML = `
+    <div class="state-msg">
+      <h3>⚠️ No se pudo cargar</h3>
+      <p>${msg}</p>
+    </div>`;
+}
+
+function parseCSV(text) {
+  const rows = [];
+  const lines = text.split('\n');
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    const cols = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQ = !inQ; continue; }
+      if (ch === ',' && !inQ) { cols.push(cur); cur = ''; continue; }
+      cur += ch;
+    }
+    cols.push(cur);
+    rows.push(cols);
+  }
+  return rows;
+}
+
+// ── START ──────────────────────────────────────────────────
+buildNav();
+buildHome();
+buildCatPages();
+</script>
+</body>
+</html>
