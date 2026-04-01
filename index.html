@@ -275,23 +275,25 @@
 
 <script>
 // ── CONFIGURACIÓN ──────────────────────────────────────────
-const SHEET_ID = '1ICw2GMuEczY6844kb_CN6Vt-Xe-o9fIq';
 const CLUB_NAME = 'Club de Pádel';
 
-// Nombre de la categoría → nombre exacto de la hoja en Google Sheets
+// URL base publicada por Google (la del formato /d/e/2PACX-...)
+// Esta URL tiene CORS habilitado y funciona desde el browser
+const PUB_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTavCVPchlf7sNtmiUpScbOEfrltf0YVeulzXZRWMXsZFQlfKruB9Z5POxkTfmiwg/pub';
+
 const CATEGORIES = [
-  { label: 'Damas',  sheet: '🏅 Damas' },
-  { label: '2da',    sheet: '🏅 2da'   },
-  { label: '4ta',    sheet: '🏅 4ta'   },
-  { label: '6ta',    sheet: '🏅 6ta'   },
-  { label: '8va',    sheet: '🏅 8va'   },
+  { label: 'Damas', gid: '378501600'  },
+  { label: '2da',   gid: '547240436'  },
+  { label: '4ta',   gid: '1855941200' },
+  { label: '6ta',   gid: '1628656547' },
+  { label: '8va',   gid: '1790611561' },
 ];
 
 // Columnas del ranking (fila 5 = headers, datos desde fila 7)
 // B=pos(formula) C=Apellido D=Nombre E=Puntos F=Torneos G=Mejor H=FotoURL
 const COL = { apellido: 2, nombre: 3, puntos: 4, torneos: 5, mejor: 6, foto: 7 }; // 0-indexed
 
-const BASE = 'https://docs.google.com/spreadsheets/d/';
+
 
 // ── INIT ───────────────────────────────────────────────────
 function slug(str) { return str.toLowerCase().replace(/[^a-z0-9]/g, '_'); }
@@ -368,7 +370,7 @@ async function loadCategoryData(cat) {
 
   try {
     // Fetch CSV from published sheet by sheet name
-    const url = `${BASE}${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(cat.sheet)}`;
+    const url = `${PUB_BASE}?gid=${cat.gid}&single=true&output=csv`;
     const res = await fetch(url);
     if (!res.ok) throw new Error('fetch failed');
     const csv = await res.text();
